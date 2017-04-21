@@ -61,7 +61,7 @@ export class PythonPluginLoader implements PluginLoader {
     }
 
     async load(pluginInfo: PluginInfo): Promise<Plugin> {
-        const typesFileName = pluginInfo.interpreterInfo.directory + "/" + "types.js";
+        const typesFileName = pluginInfo.interpreterInfo.directory + "/" + pluginInfo.packageJson.sinap["types-file"];
 
         const typesFile = await readFile(typesFileName);
 

@@ -10,7 +10,7 @@ function makePrimitive(env: Value.Environment, p: number | string | boolean) {
 }
 
 function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
-    const subprocess = spawn("python", ['helper.py'], {
+    const subprocess = spawn("python", [plugin.pluginInfo.packageJson.sinap['plugin-file']], {
         cwd: plugin.pluginInfo.interpreterInfo.directory,
         stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -36,7 +36,7 @@ function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
 
                     for (const key in s) {
                         const value = s[key];
-                        if (typeof(value) === "object") {
+                        if (typeof (value) === "object") {
                             if (value.kind === "value-reference") {
                                 state.set(key, model.environment.fromReference(value));
                             } else {
@@ -49,7 +49,7 @@ function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
 
                     return state;
                 });
-                resolve({ steps: steps, result: result});
+                resolve({ steps: steps, result: result });
             } catch (err) {
                 reject(err);
             }

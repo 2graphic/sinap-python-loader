@@ -1,0 +1,3 @@
+[submodule "test-support/dfa"]
+	path = test-support/dfa
+	url = https://github.com/2graphic/dfa-python-plugin.git
