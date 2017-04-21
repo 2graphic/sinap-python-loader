@@ -7,7 +7,7 @@ node2.isAcceptState = True
 node2.children = []
 
 edge1 = box()
-edge1.label = "1"
+edge1.label = ""
 edge1.destination = node2
 
 node1 = box()

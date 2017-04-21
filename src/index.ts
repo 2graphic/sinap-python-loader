@@ -1,1 +1,1 @@
-export { TypescriptPluginLoader } from "./plugin-loader";
+export { PythonPluginLoader } from "./plugin-loader";

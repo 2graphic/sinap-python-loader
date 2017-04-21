@@ -1,27 +1,3 @@
-# export class DFANode {
-#     /** Start State */
-#     isStartState: boolean;
-#     /** Accept State */
-#     isAcceptState: boolean;
-#     children: DFAEdge[];
-#     label: string;
-# }
-
-# export class DFAEdge {
-#     /** Symbol */
-#     label: string;
-#     destination: DFANode;
-# }
-
-# export class DFAGraph {
-#     nodes: DFANode[];
-#     // startState: DFANode;
-# }
-
-# export type Nodes = DFANode;
-# export type Edges = DFAEdge;
-# export type Graph = DFAGraph;
-
 class State:
     def __init__(self, active, inputLeft, message):
         self.active = active
@@ -37,7 +13,7 @@ def start(input, data):
             if start == None:
                 start = node
             else:
-                raise Error("Only one start state allowed")
+                raise Exception("Only one start state allowed")
 
         if node.isAcceptState:
             accepts.add(node)
@@ -46,18 +22,18 @@ def start(input, data):
             transitions = set()
             for edge in node.children:
                 if not edge.label:
-                    raise Error("Lambda transition from " + node.label + " to " + edge.destination.label + " is not allowed")
+                    raise Exception("Lambda transition from " + node.label + " to " + edge.destination.label + " is not allowed")
 
                 if len(edge.label) > 1:
-                    raise Error("Edge " + edge.label + " must be one symbol")
+                    raise Exception("Edge " + edge.label + " must be one symbol")
 
                 if edge.label in transitions:
-                    raise Error("Nondeterministic edge " + edge.label + " from node: " + node.label)
+                    raise Exception("Nondeterministic edge " + edge.label + " from node: " + node.label)
 
                 transitions.add(edge.label)
 
     if not start:
-        raise Error("Must have one start state")
+        raise Exception("Must have one start state")
 
     return State(start, data, "starting")
 
@@ -73,4 +49,4 @@ def step(current):
     elif len(destinations)== 0:
         return False
     else:
-        raise Error("This is a DFA!")
+        raise Exception("This is a DFA!")

@@ -1,18 +1,68 @@
 import * as Core from "sinap-core";
-import { TypescriptPlugin } from "./plugin";
-import { Type, Value } from "sinap-types";
+import { PythonPlugin } from "./plugin";
+import { Value, Type } from "sinap-types";
 import { Model } from "sinap-core";
-import { naturalToValue } from "./natural";
+import { spawn } from "child_process";
+import { createInterface } from "readline";
 
+function makePrimitive(env: Value.Environment, p: number | string | boolean) {
+    return new Value.Primitive(new Type.Primitive((typeof p) as Type.PrimitiveName), env, p);
+}
 
-export class TypescriptProgram implements Core.Program {
+function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
+    const subprocess = spawn("python", ['helper.py'], {
+        cwd: plugin.pluginInfo.interpreterInfo.directory,
+        stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    const lines = createInterface({ input: subprocess.stdout });
+    subprocess.stdin.write(JSON.stringify(model.serialize()) + "\n");
+    subprocess.stdin.write(JSON.stringify(args.map(a => a.serialRepresentation)) + "\n");
+
+    return new Promise<{ steps: Value.CustomObject[], result?: Value.Value, error?: Value.Primitive }>((resolve, reject) => {
+        const fromSerial: any[] = [];
+        lines.on("line", (data) => {
+            fromSerial.push(JSON.parse(data));
+        });
+
+        subprocess.on("close", () => {
+            try {
+                const stepsRaw = fromSerial.slice(0, fromSerial.length - 1);
+                const resultRaw = fromSerial[fromSerial.length - 1];
+
+                const result = makePrimitive(model.environment, resultRaw);
+                const steps = stepsRaw.map(s => {
+                    const state = new Value.CustomObject(plugin.types.state, model.environment);
+
+                    for (const key in s) {
+                        const value = s[key];
+                        if (typeof(value) === "object") {
+                            if (value.kind === "value-reference") {
+                                state.set(key, model.environment.fromReference(value));
+                            } else {
+                                throw new Error("only object references allowed");
+                            }
+                        } else {
+                            state.set(key, makePrimitive(model.environment, value));
+                        }
+                    }
+
+                    return state;
+                });
+                resolve({ steps: steps, result: result});
+            } catch (err) {
+                reject(err);
+            }
+        });
+    });
+}
+
+export class PythonProgram implements Core.Program {
     readonly model: Model;
     readonly toValue: (a: any) => Value.Value;
 
-    constructor(modelIn: Model, public plugin: TypescriptPlugin) {
+    constructor(modelIn: Model, public plugin: PythonPlugin) {
         this.model = Model.fromSerial(modelIn.serialize(), plugin);
-        this.toValue = naturalToValue(this.model.environment, this.plugin.inverseNaturalMapping);
-
         const nodes = new Value.ArrayObject(new Value.ArrayType(plugin.types.nodes), this.model.environment);
         const edges = new Value.ArrayObject(new Value.ArrayType(plugin.types.edges), this.model.environment);
 
@@ -39,47 +89,12 @@ export class TypescriptProgram implements Core.Program {
         this.model.graph.set("edges", edges);
     };
 
-    run(a: Value.Value[]): { steps: Value.CustomObject[], result?: Value.Value, error?: Value.Primitive } {
-        if (a.length !== this.plugin.types.arguments.length) {
-            throw new Error("Program.run: incorrect arity");
-        }
-        a.forEach((v, i) => {
-            if (!Type.isSubtype(v.type, this.plugin.types.arguments[i])) {
-                throw new Error(`Program.run argument at index: ${i} is of incorrect type`);
-            }
-        });
-
-
-        const unwrappedGraph = this.plugin.toNatural(this.model.graph);
-        const unwrappedInputs = a.map(v => this.plugin.toNatural(v));
-
-        let state: any;
-        try {
-            state = this.plugin.implementation.start(unwrappedGraph, ...unwrappedInputs);
-        } catch (err) {
-            return { steps: [], error: Value.makePrimitive(this.model.environment, err) };
-        }
-        const steps: Value.CustomObject[] = [];
-
-        while (state instanceof this.plugin.naturalStateType) {
-            steps.push(this.toValue(state) as Value.CustomObject);
-            try {
-                state = this.plugin.implementation.step(state);
-            } catch (err) {
-                return { steps: steps, error: Value.makePrimitive(this.model.environment, err) };
-            }
-        }
-        return { steps: steps, result: this.toValue(state) };
+    async run(a: Value.Value[]) {
+        const result = await runPython(this.plugin, this.model, a);
+        return result;
     }
 
     validate() {
-        const unwrappedGraph = this.plugin.toNatural(this.model.graph);
-
-        try {
-            this.plugin.implementation.start(unwrappedGraph, "");
-        } catch (err) {
-            return Value.makePrimitive(this.model.environment, err);
-        }
         return null;
     }
 }
