@@ -59,7 +59,7 @@ describe("Load Plugins", () => {
         const e21 = model.makeEdge(undefined, q2, q2);
         e21.set("label", Value.makePrimitive(model.environment, "1"));
 
-        const prog = dfa.makeProgram(model);
+        const prog = await dfa.makeProgram(model);
         const progQ0 = prog.model.environment.values.get(q0.uuid)!;
         const progQ1 = prog.model.environment.values.get(q1.uuid)!;
 

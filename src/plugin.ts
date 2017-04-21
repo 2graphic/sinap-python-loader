@@ -19,7 +19,7 @@ export class PythonPlugin implements Core.Plugin {
     }
 
 
-    makeProgram(model: Core.Model): Core.Program {
+    async makeProgram(model: Core.Model): Promise<Core.Program> {
         return new PythonProgram(model, this);
     }
 }

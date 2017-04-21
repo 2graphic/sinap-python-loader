@@ -1,7 +1,7 @@
 {
   "name": "sinap-python-loader",
   "description": "Bindings for synap-types from python",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "readme": "README.md",
   "license": "MIT",
   "repository": {
@@ -34,6 +34,6 @@
   },
   "dependencies": {
     "sinap-types": "~0.4.0",
-    "sinap-core": "~3.10.3"
+    "sinap-core": "~3.11.0"
   }
 }
