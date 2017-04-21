@@ -9,8 +9,8 @@ function makePrimitive(env: Value.Environment, p: number | string | boolean) {
     return new Value.Primitive(new Type.Primitive((typeof p) as Type.PrimitiveName), env, p);
 }
 
-function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
-    const subprocess = spawn("python", [plugin.pluginInfo.packageJson.sinap['plugin-file']], {
+async function runPython(plugin: PythonPlugin, model: Model, args: Value.Value[]) {
+    const subprocess = spawn("/usr/bin/env", ["python", plugin.pluginInfo.packageJson.sinap['plugin-file']], {
         cwd: plugin.pluginInfo.interpreterInfo.directory,
         stdio: ['pipe', 'pipe', 'pipe']
     });
